@@ -6,6 +6,8 @@ It is not a full C parser, but can parse expressions like:
 It produces an AST of the parsed input, and includes some functionality to
 produced annotated text output.
 
+Note that currently unicode characters are not supported in identifiers.
+
 (c) Dean McNamee <dean@gmail.com>, 2014.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
