@@ -184,7 +184,7 @@ var kCOperatorTable = {
 /** @const */ var kRegexIntDec = /^[1-9][0-9]*/;
 /** @const */ var kRegexIntOct = /^0[0-7]*/;
 /** @const */ var kRegexIntHex = /^0[xX][0-9a-fA-F]+/;
-/** @const */ var kRegexIntSuf = /^[uU][lL]?|[uU](?:ll|LL)|[lL][uU]?|(?:ll|LL)[uU]?/;
+/** @const */ var kRegexIntSuf = /^[uU](?:ll|LL)|^[uU][lL]?|^(?:ll|LL)[uU]?|^[lL][uU]?/;
 
 // 6.4.4.2 Floating constants
 // NOTE: Not bothering to support hexadecimal floating constants.
