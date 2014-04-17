@@ -85,8 +85,9 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       paren_close();
       break;
     case 'op_u': case 'op_u_s':
-      var desc = tree.assoc + (ttype === 'op_u' ? ' prefix' : ' postfix') +
-                 ' associative unary operator ' + tree.op_str;
+      var desc = tree.assoc + ' associative ' +
+                 (ttype === 'op_u' ? 'prefix' : 'postfix') +
+                 ' unary operator ' + tree.op_str;
       var b = {'type': ttype, 'text': tree.op_str, 'desc': desc, 'p': [null, null]};
       paren_open();
       if (ttype === 'op_u') blocks.push(b);
