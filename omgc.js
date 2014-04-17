@@ -45,12 +45,13 @@ function token_op_right(str, binary_prec, unary_prec) {
   return token_op(str, binary_prec, unary_prec, 'right');
 }
 
-function token_num(type, val, suffix) {
+function token_num(type, val, suffix, rawstr) {
   return {
     token_type: 'num',
     num_type: type,
     left: val,
     suffix: suffix,
+    raw: rawstr,
     led: invalid_led,
     nud: function(s) { return this; }
   };
@@ -65,8 +66,8 @@ function token_sym(name) {
   };
 }
 
-function token_int(val, suffix) { return token_num('int', val, suffix); }
-function token_flt(val, suffix) { return token_num('flt', val, suffix); }
+function token_int(val, suffix, rawstr) { return token_num('int', val, suffix, rawstr); }
+function token_flt(val, suffix, rawstr) { return token_num('flt', val, suffix, rawstr); }
 
 // Sort of a binary operator, in the way that when we put it in the AST
 // we want it to have a right (type expression) and a left (expression).
@@ -191,11 +192,12 @@ var kCOperatorTable = {
 /** @const */ var kRegexFltDec = /^(?:[0-9]*\.[0-9]+|[0-9]+\.)(?:[eE][+-]?[0-9]+)?|^[0-9]+[eE][+-]?[0-9]+/;
 /** @const */ var kRegexFltSuf = /^[fFlL]/;
 
-/** @const */ var kNumberLexers = [
-  kRegexFltDec, kRegexFltSuf, parseFloat, token_flt,
+/** @const */ var kRegexLexers = [
+  kRegexFltDec, kRegexFltSuf, parseFloat,                              token_flt,
   kRegexIntHex, kRegexIntSuf, function(x) { return parseInt(x, 16); }, token_int,
   kRegexIntOct, kRegexIntSuf, function(x) { return parseInt(x,  8); }, token_int,
   kRegexIntDec, kRegexIntSuf, function(x) { return parseInt(x, 10); }, token_int,
+  kRegexSym,    null,         null,                                    token_sym
 ];
 
 // We aren't going to really get this right, but this is some c/c++/c++11
@@ -215,6 +217,40 @@ function CLexer(str) {
 
   function lex_single_token() {
     if (p >= len) throw "Unexpected end of input";
+
+    // NOTE: We need to process numbers before operators,
+    // because of the '.' operator, we would otherwise interpret
+    // '.1' as operator '.' and then 1.
+
+    var match;
+
+    // TODO(deanm): Performance of string slicing?
+    var strslice = str.substr(p);
+
+    // Process numbers / identifiers.
+    for (var j = 3, jl = kRegexLexers.length; j < jl; j += 4) {
+      var regex = kRegexLexers[j-3];
+
+      if ((match = strslice.match(regex)) === null) continue;
+
+      var suf_regex    = kRegexLexers[j-2];
+      var valfunc      = kRegexLexers[j-1];
+      var token_create = kRegexLexers[j];
+
+      var rawstr = match[0];
+      p += rawstr.length;
+      var val = valfunc !== null ? valfunc(rawstr) : rawstr;
+
+      if (suf_regex === null)
+        return token_create(val);
+
+      var suffix = '';
+      if ((match = str.substr(p).match(suf_regex)) !== null) {
+        suffix = match[0];
+        p += suffix.length;
+      }
+      return token_create(val, suffix, rawstr + suffix);
+    }
 
     var c;
 
@@ -362,37 +398,7 @@ function CLexer(str) {
         // fall through and out.
     }
 
-    var match;
-
-    // Process numbers.
-    // TODO(deanm): Performance of string slicing?
-    for (var j = 3, jl = kNumberLexers.length; j < jl; j += 4) {
-      var reg = kNumberLexers[j-3];
-
-      if ((match = str.slice(p).match(reg)) === null) continue;
-
-      var suf_reg = kNumberLexers[j-2];
-      var valfunc = kNumberLexers[j-1];
-      var token_create = kNumberLexers[j];
-
-      var suffix = '';
-      var val = valfunc(match[0]);
-      p += match[0].length;
-      if ((match = str.slice(p).match(suf_reg)) !== null) {
-        suffix = match[0];
-        p += suffix.length;
-      }
-      return token_create(val, suffix);
-    }
-
-    // Process identifiers.
-    if ((match = str.slice(p).match(kRegexSym)) !== null) {
-      var name = match[0];
-      p += name.length;
-      return token_sym(name);
-    }
-
-    throw "Failed in processing input: " + str.slice(p);
+    throw "Failed in lexing input: " + str.substr(p);
   }
 
   function peek_token() {

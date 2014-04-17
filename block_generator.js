@@ -2,11 +2,6 @@
 
 // Generates a list of annotated text strings ("blocks") from an AST.
 
-function format_float(f) {
-  if ((f|0) === f) return f + '.0';
-  return f.toExponential();
-}
-
 function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
   if (tree === null)  // Bad input, missing a child on an operator, etc.
     throw "Operator missing operand?";
@@ -27,8 +22,10 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
 
   switch (ttype) {
     case 'num':
-      var text = tree.num_type === 'flt' ?
-                 format_float(tree.left) : tree.left;
+      // NOTE: Could also format tree.left, which is the numeric
+      // value.  However it's nicer to get out exactly what came in,
+      // which also includes the suffix, etc.
+      var text = tree.raw;
       var desc = tree.num_type === 'flt' ?
                  'floating point number' : 'integer number';
       blocks.push({'type': 'num', 'desc': desc, 'text': text});
