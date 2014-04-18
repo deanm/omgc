@@ -38,6 +38,7 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       var desc = 'binary operator function call';
       var b0 = {'type': 'op_u', 'text': '(', 'desc': desc, 'p': p};
       var b1 = {'type': 'op_u', 'text': ')', 'desc': desc, 'p': p};
+      paren_open();
       p[0] = blocks.length;
       var text = gen_blocks_rec(depth, 'left', tree.left, tree, conf, blocks);
       p[1] = blocks.length;
