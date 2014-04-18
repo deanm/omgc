@@ -23,7 +23,7 @@ function token_op(str, binary_prec, unary_prec, assoc) {
       function(left, s) {
         this.prec = binary_prec;
         this.left = left;
-        this.right = s.expression(binary_prec + (assoc === 'right' ? 0.1 : 0), s);
+        this.right = s.expression(binary_prec + (assoc === 'right' ? 0.1 : 0));
         return this;
       },
     nud: unary_prec === 0 ? invalid_nud :
@@ -31,7 +31,7 @@ function token_op(str, binary_prec, unary_prec, assoc) {
         this.token_type = 'op_u';
         this.prec = unary_prec;
         this.assoc = 'right';  // Unary always right assoc.
-        this.left = s.expression(unary_prec, s);
+        this.left = s.expression(unary_prec);
         return this;
       }
   };
@@ -80,7 +80,7 @@ function token_typecast(typestr) {
     led: invalid_led,
     nud: function(s) {
       this.left = token_sym(typestr);
-      this.right = s.expression(3.1, s);
+      this.right = s.expression(3.1);
       return this;
     }
   };
@@ -117,7 +117,7 @@ function c_token_post_pre(post_prec, pre_prec) {
       nud: function(s) {        // prefix (++a).
         this.assoc = 'right';
         this.prec = pre_prec;
-        this.left = s.expression(3, s);
+        this.left = s.expression(3);
         return this;
       }
     };
@@ -330,10 +330,9 @@ function CLexer(str) {
           led: function(left, s) {
             var e = null;
             if (s.token.token_type !== ')')
-              e = s.expression(kMaxPrecedence, s);
-            if (s.token.token_type !== ')')
+              e = s.expression(kMaxPrecedence);
+            if (s.advance_token() !== ')')
               throw "Unmatched left parenthesis";
-            s.advance();  // Advance over ')'.
             return {
               token_type: 'fun',
               lprec: 2,
@@ -345,10 +344,9 @@ function CLexer(str) {
           nud: function(s) {
             if (s.token.token_type === ')')
               throw "Empty parentheses expression";
-            var e = s.expression(kMaxPrecedence, s);
-            if (s.token.token_type !== ')')
+            var e = s.expression(kMaxPrecedence);
+            if (s.advance_token() !== ')')
               throw "Unmatched left parenthesis";
-            s.advance();  // Advance over ')'.
             return e;  // Insert the expression not the paren into the tree.
           }
         };
@@ -362,10 +360,9 @@ function CLexer(str) {
             this.prec = 2;
             if (s.token.token_type === ']')
               throw "Empty subscript";
-            var e = s.expression(kMaxPrecedence, s);
-            if (s.token.token_type !== ']')
+            var e = s.expression(kMaxPrecedence);
+            if (s.advance_token() !== ']')
               throw "Unmatched left bracket";
-            s.advance();  // Advance over ']'.
             this.left = left;
             this.right = e;
             return this;
@@ -384,11 +381,10 @@ function CLexer(str) {
           led: function(left, s) {
             this.prec = 15;
             this.left = left;
-            this.middle = s.expression(kMaxPrecedence-1, s);
-            if (s.token.token_type !== ':')
+            this.middle = s.expression(kMaxPrecedence-1);
+            if (s.advance_token() !== ':')
               throw "Unmatched : for ?.";
-            s.advance();  // Advance over ':';
-            this.right = s.expression(kMaxPrecedence-1, s);
+            this.right = s.expression(kMaxPrecedence-1);
             return this;
           },
           nud: invalid_nud,
@@ -423,32 +419,38 @@ function CLexer(str) {
   }
 }
 
-function build_ast(lexer) {
+/** @constructor */
+function PrattMachine(lexer) {
   var end_token = {lprec: kMaxPrecedence, token_type: 'end'};
-  var state = {
-    token: end_token,
-    at_end: function() { return this.token === end_token; },
-    advance: function() {
-      var t = lexer.lex_token();
-      this.token = t === null ? end_token : t;
-    },
-    expression: function(rprec, s) {
-      if (s.at_end()) return null;
-      var t = s.token;
-      s.advance();
-      var left = t.nud(s);
-      while (rprec > s.token.lprec) {
-        t = s.token;
-        s.advance();
-        left = t.led(left, s);
-      }
-      return left;
-    }
+
+  this.token = end_token;
+  this.at_end = function() { return this.token === end_token; };
+  this.advance_token = function() {
+    var prev_type = this.token.token_type;
+    var t = lexer.lex_token();
+    this.token = t === null ? end_token : t;
+    return prev_type;  // Return type we advanced over.
   };
 
-  state.advance();  // get first token.
+  this.expression = function(rprec) {
+    if (this.at_end()) return null;
+    var t = this.token;
+    this.advance_token();
+    var left = t.nud(this);
+    while (rprec > this.token.lprec) {
+      t = this.token;
+      this.advance_token();
+      left = t.led(left, this);
+    }
+    return left;
+  };
 
-  var tree = state.expression(kMaxPrecedence-1, state);
+  this.advance_token();  // Start with first token.
+}
+
+function build_ast(lexer) {
+  var state = new PrattMachine(lexer);
+  var tree = state.expression(kMaxPrecedence-1);
   if (!state.at_end())
     throw "Trailing token: " + state.token.token_type;
   return tree;
