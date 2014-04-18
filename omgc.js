@@ -8,8 +8,6 @@
 //   var lexer = new CLexer(string_input);
 //   var tree = build_ast(lexer);
 
-/** @const */ var kMaxPrecedence = 20;  // Should be at least 2 greater than largest used precedence.
-
 function invalid_led() { throw "error, invalid led call"; }
 function invalid_nud() { throw "error, invalid nud call"; }
 
@@ -135,6 +133,9 @@ function c_token_whitespace() {
 function is_whitespace_token(t) {
   return t === kDummyWhitespaceToken;
 }
+
+// Should be at least 2 greater than the largest used precedence.
+/** @const */ var kMaxPrecedence = 20;
 
 var kCOperatorTable = {
   " ":   c_token_whitespace(),
