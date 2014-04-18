@@ -8,7 +8,7 @@
 //   var lexer = new CLexer(string_input);
 //   var tree = build_ast(lexer);
 
-var kMaxPrecedence = 20;  // Should be at least 2 greater than largest used precedence.
+/** @const */ var kMaxPrecedence = 20;  // Should be at least 2 greater than largest used precedence.
 
 function invalid_led() { throw "error, invalid led call"; }
 function invalid_nud() { throw "error, invalid nud call"; }
