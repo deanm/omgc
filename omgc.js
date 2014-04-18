@@ -393,7 +393,6 @@ function CLexer(str) {
           },
           nud: invalid_nud,
         };
-        return token_op_right(c, 15, 0);
       default:
         // fall through and out.
     }
