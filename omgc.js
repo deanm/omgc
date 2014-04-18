@@ -175,7 +175,7 @@ var kCOperatorTable = {
   '&=':  c_token_op_right(  16, 0  ),
   '^=':  c_token_op_right(  16, 0  ),
   '|=':  c_token_op_right(  16, 0  ),
-  ',':   c_token_op_right(  18, 0  )
+  ',':   c_token_op_left(   18, 0  )
 };
 
 // 6.4.2.1 Identifiers - General

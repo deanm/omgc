@@ -141,6 +141,9 @@ function generate_blocks(tree) {
     if (path === 'fun' || depth === 0) return -1;
     if (path === 'subscript') return 0;
 
+    // ',' has highest precedence, don't think a((1, 2), 3) is valid anyway.
+    if (prev.token_type === 'op_b' && prev.op_str === ',') return -1;
+
     if (cur.prec < prev.prec)
       return 0;
     if (path === 'right' && prev.assoc === 'right' && cur.prec <= prev.prec)
