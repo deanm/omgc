@@ -1,12 +1,16 @@
 omgc is a C expression parser in JavaScript.
 
+It is written to run in a browser or standalone (Node, Plask, etc).
+
 It is not a full C parser, but can parse expressions like:
-  a ? b + 2 : c
+
+  a ? b + 2 : c(1, 2)
 
 It produces an AST of the parsed input, and includes some functionality to
 produced annotated text output.
 
-Note that currently unicode characters are not supported in identifiers.
+Note that the entire c syntax is not currently supported, for example there
+are no string or character literals, or unicode characters in identifiers.
 
 (c) Dean McNamee <dean@gmail.com>, 2014.
 
