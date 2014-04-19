@@ -382,10 +382,10 @@ function CLexer(str) {
           led: function(left, s) {
             this.prec = 15;
             this.left = left;
-            this.middle = s.expression(kMaxPrecedence-1);
+            this.middle = s.expression(15.1);
             if (s.advance_token() !== ':')
               throw "Unmatched : for ?.";
-            this.right = s.expression(kMaxPrecedence-1);
+            this.right = s.expression(15.1);
             return this;
           },
           nud: invalid_nud,
