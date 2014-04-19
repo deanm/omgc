@@ -204,7 +204,7 @@ var kCOperatorTable = {
 // We aren't going to really get this right, but this is some c/c++/c++11
 // that should sort of get some of the obvious ones.
 /** @const */ var kCTypeQualifiers = ['signed', 'unsigned', 'short', 'long'];
-/** @const */ var kCTypes = ['bool', 'char', 'int', 'float', 'double',
+/** @const */ var kCTypes = ['bool', 'char', 'int', 'float', 'double', 'void',
                              'wchar_t', 'char16_t', 'char32_t',
                              '_Bool', 'float_t', 'double_t',
                              'int8_t, uint8_t', 'int16_t, uint16_t',
