@@ -88,7 +88,17 @@ function test_subscript() {
   });
 }
 
+function test_sizeof() {
+  assert_eq(
+    "sizeof sizeofnot",
+    expr_to_string("sizeof sizeofnot"));
+  assert_eq(
+    "(sizeof a) + 2",
+    expr_to_string("sizeof(a) + 2"));
+}
+
 test_basic();
 test_ternary();
 test_func();
 test_subscript();
+test_sizeof();

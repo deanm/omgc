@@ -242,8 +242,9 @@ function CLexer(str) {
       p += rawstr.length;
       var val = valfunc !== null ? valfunc(rawstr) : rawstr;
 
+      // Identifiers, with special handling for the sizeof operator.
       if (suf_regex === null)
-        return token_create(val);
+        return val === 'sizeof' ? token_op_right(val, 0, 3) : token_create(val);
 
       var suffix = '';
       if ((match = str.substr(p).match(suf_regex)) !== null) {
