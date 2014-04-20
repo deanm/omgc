@@ -59,6 +59,18 @@ function test_ternary() {
   assert_eq(
     "a ? ((b++), c) : d",
     expr_to_string("a ? b++, c : d"));
+  assert_throws("Unmatched : for ?", function() {
+    expr_to_string("a ?");
+  });
+  assert_throws("Operator missing operand?", function() {
+    expr_to_string("a ? b :");
+  });
+  assert_throws("Unexpected (nud) encounter of token type: ':'", function() {
+    expr_to_string("a ? : c");
+  });
+  assert_throws("Unexpected (nud) encounter of token type: 'op_t'", function() {
+    expr_to_string(" ? b : c");
+  });
 }
 
 function test_func() {

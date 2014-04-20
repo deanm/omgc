@@ -318,9 +318,8 @@ function CLexer(str) {
 
     // Special handling for complicated single character tokens.
     switch (c) {
-      case ")": case ']':
+      case ")": case ']': case ':':
         ++p;
-        // Handled by ( / [ below.
         return {
           token_type: c,
           led: invalid_led,
@@ -436,8 +435,6 @@ function CLexer(str) {
           },
           nud: invalid_nud,
         };
-      case ":":
-        ++p; return {token_type: ':'};  // Handled below.
       case "?":
         ++p;
         return {
@@ -450,7 +447,7 @@ function CLexer(str) {
             this.left = left;
             this.middle = s.expression(kMaxPrecedence);
             if (s.advance_token() !== ':')
-              throw "Unmatched : for ?.";
+              throw "Unmatched : for ?";
             this.right = s.expression(15.1);
             return this;
           },
