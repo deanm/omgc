@@ -34,13 +34,9 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       blocks.push({'type': 'sym', 'desc': 'identifier', 'text': tree.left});
       break;
     case 'typespec':
-      // Should only be reached through sizeof, typecast is handled without
-      // recursing down to the typespec node.
-      if (prev.token_type !== 'op_u' || prev.op_str !== 'sizeof')
-        throw 'Cannot use type in expression: ' + tree.left;
-      blocks.push({'type': '', 'text': '('});
-      blocks.push({'type': 'typespec', 'desc': 'type', 'text': tree.left});
-      blocks.push({'type': '', 'text': ')'});
+      // We handle typespecs specially in typecasts and sizeof, without actually recursing
+      // down to the typespec node.  So we shouldn't get here unless a type was misused.
+      throw 'Cannot use type in expression: ' + tree.left;
       break;
     case 'fun':
       var p = [null, null, null, null];
@@ -103,7 +99,13 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       paren_open();
       if (ttype === 'op_u') blocks.push(b);
       b['p'][0] = blocks.length;
-      gen_blocks_rec(depth, ttype === 'op_u' ? 'right' : 'left', tree.left, tree, conf, blocks);
+      if (tree.left.token_type === 'typespec') {
+        blocks.push({'type': '', 'text': '('});
+        blocks.push({'type': 'typespec', 'desc': 'type', 'text': tree.left.left});
+        blocks.push({'type': '', 'text': ')'});
+      } else {
+        gen_blocks_rec(depth, ttype === 'op_u' ? 'right' : 'left', tree.left, tree, conf, blocks);
+      }
       b['p'][1] = blocks.length;
       if (ttype === 'op_u_s') blocks.push(b);
       paren_close();

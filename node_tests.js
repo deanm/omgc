@@ -125,6 +125,16 @@ function test_typespec() {
   assert_throws("Cannot use type in expression: int", function() {
     expr_to_string("sizeof int");
   });
+  assert_eq(
+    "sizeof a",
+    expr_to_string("sizeof((a))"));
+  // TODO Better/more specific exception message.
+  assert_throws("Unexpected (nud) encounter of token type: ')'", function() {
+    expr_to_string("sizeof((int))");
+  });
+  assert_throws("Cannot use type in expression: int", function() {
+    expr_to_string("int");
+  });
 }
 
 test_basic();

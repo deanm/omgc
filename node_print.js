@@ -28,5 +28,5 @@ try {
   console.log('Minimal Parentheses:');
   console.log('  ' + blocks_to_string(blocks, false));
 } catch (e) {
-  console.log('Error: ' + e);
+  throw e;
 }

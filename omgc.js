@@ -8,8 +8,12 @@
 //   var lexer = new CLexer(string_input);
 //   var tree = build_ast(lexer);
 
-function invalid_led() { throw "error, invalid led call"; }
-function invalid_nud() { throw "error, invalid nud call"; }
+function invalid_nud() {
+  throw "Unexpected (nud) encounter of token type: '" + this.token_type + "'";
+}
+function invalid_led() {
+  throw "Unexpected (led) encounter of token type: '" + this.token_type + "'";
+}
 
 function token_op(str, binary_prec, unary_prec, assoc) {
   return {
@@ -315,7 +319,13 @@ function CLexer(str) {
     // Special handling for complicated single character tokens.
     switch (c) {
       case ")": case ']':
-        ++p; return { token_type: c };  // Handled by ( / [ below.
+        ++p;
+        // Handled by ( / [ below.
+        return {
+          token_type: c,
+          led: invalid_led,
+          nud: invalid_nud
+        };
       case "(":
         ++p;
         // Try to directly handle typecasts of the form (type exp).
