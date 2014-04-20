@@ -43,6 +43,7 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       var desc = 'operator function call';
       var b0 = {'type': 'op_u', 'text': '(', 'desc': desc, 'p': p};
       var b1 = {'type': 'op_u', 'text': ')', 'desc': desc, 'p': p};
+      var b2 = {'type': 'op_u', 'text': ', ', 'desc': desc, 'p': p};
       paren_open();
       p[0] = blocks.length;
       var text = gen_blocks_rec(depth, 'left', tree.left, tree, conf, blocks);
@@ -52,7 +53,7 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
         p.push(blocks.length);
         gen_blocks_rec(depth, 'funarg', args.left, tree, conf, blocks);
         p.push(blocks.length);
-        if (args.right !== null) blocks.push({'type': '', 'text': ', '});
+        if (args.right !== null) blocks.push(b2);
       }
       blocks.push(b1);
       paren_close();
