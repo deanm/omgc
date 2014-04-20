@@ -33,6 +33,15 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
     case 'sym':
       blocks.push({'type': 'sym', 'desc': 'identifier', 'text': tree.left});
       break;
+    case 'typespec':
+      // Should only be reached through sizeof, typecast is handled without
+      // recursing down to the typespec node.
+      if (prev.token_type !== 'op_u' || prev.op_str !== 'sizeof')
+        throw 'Cannot use type in expression: ' + tree.left;
+      blocks.push({'type': '', 'text': '('});
+      blocks.push({'type': 'typespec', 'desc': 'type', 'text': tree.left});
+      blocks.push({'type': '', 'text': ')'});
+      break;
     case 'fun':
       var p = [null, null, null, null];
       var desc = 'binary operator function call';
@@ -66,17 +75,19 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       blocks.push(b1);
       paren_close();
       break;
-    case 'op_b_typecast':
+    case 'op_u_typecast':
+      if (tree.left.token_type !== 'typespec')
+        throw "Typecast's left is not a typespec node";
       paren_open();
       var p = [null, null, null, null];
-      var desc = 'binary operator typecast';
-      var b0 = {'type': 'op_u', 'text': '(', 'desc': desc, 'p': p};
-      var b1 = {'type': 'op_u', 'text': ')', 'desc': desc, 'p': p};
-      blocks.push(b0);
+      var desc = 'unary operator typecast';
+      // Don't recurse into the 'type' handling, we want to consider the
+      // whole (type) as the operator.
+      var text = '(' + tree.left.left + ')';
+      var b0 = {'type': 'op_u', 'text': text, 'desc': desc, 'p': p};
       p[0] = blocks.length;
-      var text = gen_blocks_rec(depth, 'left', tree.left, tree, conf, blocks);
+      blocks.push(b0);
       p[1] = blocks.length;
-      blocks.push(b1);
       p[2] = blocks.length;
       gen_blocks_rec(depth, 'typecast', tree.right, tree, conf, blocks);
       p[3] = blocks.length;
@@ -134,7 +145,7 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       paren_close();
       break;
     default:
-      throw "Internal error, unhandled node: " + tree.token_type;
+      throw "Unknown node: " + tree.token_type;
   }
 }
 

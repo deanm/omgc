@@ -97,8 +97,39 @@ function test_sizeof() {
     expr_to_string("sizeof(a) + 2"));
 }
 
+function test_typespec() {
+  assert_eq(
+    "sizeof (int)",
+    expr_to_string("sizeof (int)"));
+  assert_eq(
+    "sizeof (int *)",
+    expr_to_string("sizeof (int*)"));
+  assert_eq(
+    "sizeof (int * *)",
+    expr_to_string("sizeof (int**)"));
+  assert_eq(
+    "((int)a) + 2",
+    expr_to_string("(int)(a) + 2"));
+  assert_eq(
+    "((int *)a) + 2",
+    expr_to_string("(int*)(a) + 2"));
+  assert_eq(
+    "(sizeof (*a)) + 2",
+    expr_to_string("sizeof *a + 2"));
+  assert_eq(
+    "(sizeof (&a)) + 2",
+    expr_to_string("sizeof &a + 2"));
+  assert_throws("Cannot use type in expression: int", function() {
+    expr_to_string("a + int");
+  });
+  assert_throws("Cannot use type in expression: int", function() {
+    expr_to_string("sizeof int");
+  });
+}
+
 test_basic();
 test_ternary();
 test_func();
 test_subscript();
 test_sizeof();
+test_typespec();

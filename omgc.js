@@ -43,6 +43,30 @@ function token_op_right(str, binary_prec, unary_prec) {
   return token_op(str, binary_prec, unary_prec, 'right');
 }
 
+function token_op_sizeof(prec) {
+  return {
+    token_type: 'op_u',
+    op_str: 'sizeof',
+    assoc: 'right',
+    led: invalid_led,
+    nud: function(s) {
+        this.prec = prec;
+        this.assoc = 'right';  // Unary always right assoc.
+        if (s.token.token_type === 'op_u_typecast') {
+          this.left = s.token.left;
+          s.advance_token();
+        } else {
+          this.left = s.expression(prec);
+          // "sizeof int" is not valid, it must be "sizeof (int)" which will
+          // come in as a typecast above.
+          if (this.left.token_type === 'typespec')
+            throw 'Cannot use type in expression: ' + this.left.left;
+        }
+        return this;
+      }
+  };
+}
+
 function token_num(type, val, suffix, rawstr) {
   return {
     token_type: 'num',
@@ -64,6 +88,15 @@ function token_sym(name) {
   };
 }
 
+function token_typespec(specstr) {
+  return {
+    token_type: 'typespec',
+    left: specstr,
+    led: invalid_led,
+    nud: function(s) { return this; }
+  };
+}
+
 function token_int(val, suffix, rawstr) { return token_num('int', val, suffix, rawstr); }
 function token_flt(val, suffix, rawstr) { return token_num('flt', val, suffix, rawstr); }
 
@@ -72,12 +105,12 @@ function token_flt(val, suffix, rawstr) { return token_num('flt', val, suffix, r
 // But in terms of parsing it should be processed like a unary.
 function token_typecast(typestr) {
   return {
-    token_type: 'op_b_typecast',
+    token_type: 'op_u_typecast',
     prec: 3,
     assoc: 'right',
     led: invalid_led,
+    left: token_typespec(typestr),
     nud: function(s) {
-      this.left = token_sym(typestr);
       this.right = s.expression(3.1);
       return this;
     }
@@ -204,12 +237,17 @@ var kCOperatorTable = {
 // We aren't going to really get this right, but this is some c/c++/c++11
 // that should sort of get some of the obvious ones.
 /** @const */ var kCTypeQualifiers = ['signed', 'unsigned', 'short', 'long'];
-/** @const */ var kCTypes = ['bool', 'char', 'int', 'float', 'double', 'void',
-                             'wchar_t', 'char16_t', 'char32_t',
-                             '_Bool', 'float_t', 'double_t',
-                             'int8_t, uint8_t', 'int16_t, uint16_t',
-                             'int32_t, uint32_t', 'int64_t, uint64_t',
-                             'intptr_t, uintptr_t', 'size_t', 'ssize_t', 'ptrdiff_t'];
+/** @const */ var kCTypes = [
+  // N1124 - 6.7.2 Type specifiers
+  // NOTE: "The type specifier _Complex shall not be used if the implementation
+  //        does not provide complex types."
+  'void', 'char', 'int', 'float', 'double', '_Bool',
+  // Others
+  'wchar_t', 'char16_t', 'char32_t', 'float_t', 'double_t',
+  'int8_t, uint8_t', 'int16_t, uint16_t',
+  'int32_t, uint32_t', 'int64_t, uint64_t',
+  'intptr_t, uintptr_t', 'size_t', 'ssize_t', 'ptrdiff_t'
+];
 
 /** @constructor */
 function CLexer(str) {
@@ -242,9 +280,14 @@ function CLexer(str) {
       p += rawstr.length;
       var val = valfunc !== null ? valfunc(rawstr) : rawstr;
 
-      // Identifiers, with special handling for the sizeof operator.
-      if (suf_regex === null)
-        return val === 'sizeof' ? token_op_right(val, 0, 3) : token_create(val);
+      // Identifiers, with special handling for types and the sizeof operator.
+      if (suf_regex === null) {
+        if (val === 'sizeof')
+          return token_op_sizeof(3);
+        if (kCTypeQualifiers.indexOf(val) !== -1 || kCTypes.indexOf(val) !== -1)
+          return token_typespec(val);
+        return token_create(val);
+      }
 
       var suffix = '';
       if ((match = str.substr(p).match(suf_regex)) !== null) {
@@ -277,9 +320,7 @@ function CLexer(str) {
         ++p;
         // Try to directly handle typecasts of the form (type exp).
         var peek = peek_token();
-        if (peek && peek.token_type === 'sym' &&
-            (kCTypeQualifiers.indexOf(peek.left) !== -1 ||
-             kCTypes.indexOf(peek.left) !== -1)) {
+        if (peek && peek.token_type === 'typespec') {
           var types = [ ];
 
           var seen_star = false;
@@ -299,7 +340,7 @@ function CLexer(str) {
               continue;
             }
 
-            if (t.token_type === 'sym' &&
+            if (t.token_type === 'typespec' &&
                 kCTypeQualifiers.indexOf(t.left) !== -1) {
               if (seen_type === true)
                 throw "Typecast qualifier after a type";
@@ -310,7 +351,7 @@ function CLexer(str) {
               continue;
             }
 
-            if (t.token_type === 'sym' &&
+            if (t.token_type === 'typespec' &&
                 kCTypes.indexOf(t.left) !== -1) {
               if (seen_type === true)
                 throw "Typecast type after another type";
