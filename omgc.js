@@ -382,17 +382,31 @@ function CLexer(str) {
           lprec: 2,  // Function call
           led: function(left, s) {
             var e = null;
-            if (s.token.token_type !== ')')
-              e = s.expression(kMaxPrecedence);
+            var args_head = {right: null};  // Dummy head.
+            var args_tail = args_head;
+
+            if (s.token.token_type !== ')') {
+              while (true) {
+                var e = s.expression(18);  // Don't eat comma operator.
+                var arg = {token_type: 'funarg', left: e, right: null};
+                args_tail.right = arg;
+                args_tail = arg;
+                if (s.token.token_type !== 'op_b' || s.token.op_str !== ',')
+                  break;
+                s.advance_token();  // over ','
+              }
+            }
+
             if (s.advance_token() !== ')')
               throw "Unmatched left parenthesis";
+
             return {
               token_type: 'fun',
               lprec: 2,
               prec: 2,
               assoc: 'left',
               left: left,
-              right: e};
+              right: args_head.right};
           },
           nud: function(s) {
             if (s.token.token_type === ')')

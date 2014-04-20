@@ -39,8 +39,8 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       throw 'Cannot use type in expression: ' + tree.left;
       break;
     case 'fun':
-      var p = [null, null, null, null];
-      var desc = 'binary operator function call';
+      var p = [null, null];
+      var desc = 'operator function call';
       var b0 = {'type': 'op_u', 'text': '(', 'desc': desc, 'p': p};
       var b1 = {'type': 'op_u', 'text': ')', 'desc': desc, 'p': p};
       paren_open();
@@ -48,10 +48,12 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
       var text = gen_blocks_rec(depth, 'left', tree.left, tree, conf, blocks);
       p[1] = blocks.length;
       blocks.push(b0);
-      p[2] = blocks.length;
-      if (tree.right !== null)  // Null when zero parameters.
-        gen_blocks_rec(depth, 'fun', tree.right, tree, conf, blocks);
-      p[3] = blocks.length;
+      for (var args = tree.right; args !== null; args = args.right) {
+        p.push(blocks.length);
+        gen_blocks_rec(depth, 'funarg', args.left, tree, conf, blocks);
+        p.push(blocks.length);
+        if (args.right !== null) blocks.push({'type': '', 'text': ', '});
+      }
       blocks.push(b1);
       paren_close();
       break;
@@ -154,11 +156,11 @@ function gen_blocks_rec(depth, path, tree, prev, conf, blocks) {
 function generate_blocks(tree) {
 
   function minimal_pf(depth, path, cur, prev) {
-    if (path === 'fun' || depth === 0) return -1;
+    if (depth === 0) return -1;
     if (path === 'subscript') return 0;
 
-    // ',' has highest precedence, don't think a((1, 2), 3) is valid anyway.
-    if (prev.token_type === 'op_b' && prev.op_str === ',') return -1;
+    if (path === 'funarg')  // Only paren arguments of comma expressions.
+      return cur.token_type === 'op_b' && cur.op_str === ',' ? 1 : -1;
 
     if (cur.prec < prev.prec)
       return 0;

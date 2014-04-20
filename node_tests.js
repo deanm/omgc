@@ -65,8 +65,23 @@ function test_func() {
   assert_eq(
     "(((a.b)->c).d)(1, 2, 3, e())",
     expr_to_string("a.b->c.d(1, 2, 3, e())"));
+  assert_eq(
+    "a()",
+    expr_to_string("a()"));
+  assert_eq(
+    "a(1, 2)",
+    expr_to_string("a(1, 2)"));
+  assert_eq(
+    "a(1 + 2, 2 + 3)",
+    expr_to_string("a(1+2, 2+3)"));
+  assert_eq(
+    "a((1, 2))",
+    expr_to_string("a((1,2))"));
   assert_throws("Unmatched left parenthesis", function() {
     expr_to_string("c(");
+  });
+  assert_throws("Unexpected (nud) encounter of token type: ')'", function() {
+    expr_to_string("c(1,)");
   });
 }
 
@@ -137,9 +152,22 @@ function test_typespec() {
   });
 }
 
+function test_comma() {
+  assert_eq(
+    "(a = 1), (b = 2)",
+    expr_to_string("a = 1, b = 2"));
+  assert_eq(
+    "c(((a = 1), (b = 2)))",
+    expr_to_string("c((a = 1, b = 2))"));
+  assert_eq(
+    "c = ((1, 2), 3)",
+    expr_to_string("c = (1, 2, 3)"));
+};
+
 test_basic();
 test_ternary();
 test_func();
 test_subscript();
 test_sizeof();
 test_typespec();
+test_comma();
