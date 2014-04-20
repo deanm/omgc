@@ -448,7 +448,7 @@ function CLexer(str) {
           led: function(left, s) {
             this.prec = 15;
             this.left = left;
-            this.middle = s.expression(15.1);
+            this.middle = s.expression(kMaxPrecedence);
             if (s.advance_token() !== ':')
               throw "Unmatched : for ?.";
             this.right = s.expression(15.1);

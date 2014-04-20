@@ -56,6 +56,9 @@ function test_ternary() {
   assert_eq(
     "f((a ? b : c) = d)",
     expr_to_string("f(a ? b : c = d)"));
+  assert_eq(
+    "a ? ((b++), c) : d",
+    expr_to_string("a ? b++, c : d"));
 }
 
 function test_func() {
