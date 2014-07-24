@@ -178,6 +178,11 @@ function test_comma() {
     "c = ((1, 2), 3)",
     expr_to_string("c = (1, 2, 3)"));
 };
+function test_compare() {
+  assert_eq(
+    "(((a < 1) && (a <= 2)) && (a > 3)) || (((a >= 6) && (a != 4)) && (a == 5))",
+    expr_to_string("a < 1 && a <= 2 && a > 3 || a >= 6 && a != 4 && a == 5"));
+};
 
 test_basic();
 test_ternary();
@@ -186,3 +191,4 @@ test_subscript();
 test_sizeof();
 test_typespec();
 test_comma();
+test_compare();
